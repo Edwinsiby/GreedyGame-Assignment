@@ -1,7 +1,6 @@
 package delivery
 
 import (
-	"errors"
 	"greedy/pkg/domain"
 	"greedy/pkg/usecase"
 	"log"
@@ -42,6 +41,10 @@ func (h Handler) Set(c *gin.Context) {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error parsing json": err.Error()})
 		return
 	}
+	if input.Key == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "enter a valid key"})
+		return
+	}
 	value := domain.KeyValue{
 		Value: input.Value.Value,
 	}
@@ -57,7 +60,7 @@ func (h Handler) Set(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error from server": err})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"Value stored for key : ": input.Key})
+	c.JSON(http.StatusCreated, gin.H{"Value stored for key ": input.Key})
 	return
 }
 
@@ -69,7 +72,7 @@ func (h Handler) Get(c *gin.Context) {
 		return
 	}
 	if input.Key == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error from input": errors.New("enter a valid key")})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "enter a valid key"})
 		return
 	}
 	value, err := h.usecase.Get(input.Key)
@@ -77,7 +80,7 @@ func (h Handler) Get(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error from server": err.Error()})
 		return
 	}
-	c.JSON(http.StatusFound, gin.H{"Value for key :": input.Key, "is": value})
+	c.JSON(http.StatusFound, gin.H{"Value for key ": input.Key, "is": value})
 	return
 }
 
@@ -89,14 +92,14 @@ func (h Handler) QPush(c *gin.Context) {
 		return
 	}
 	if input.Key == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error from input": errors.New("enter a valid key")})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "enter a valid key"})
 		return
 	}
 	if err = h.usecase.QPush(input.Key, input.Value...); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error from server": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"Value stored for key : ": input.Key})
+	c.JSON(http.StatusCreated, gin.H{"Value stored for key ": input.Key})
 	return
 }
 
@@ -108,7 +111,7 @@ func (h Handler) QPop(c *gin.Context) {
 		return
 	}
 	if input.Key == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error from input": errors.New("enter a valid key")})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "enter a valid key"})
 		return
 	}
 	value, err := h.usecase.QPop(input.Key)
@@ -116,7 +119,7 @@ func (h Handler) QPop(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error from server": err.Error()})
 		return
 	}
-	c.JSON(http.StatusFound, gin.H{"Value for que :": input.Key, "is": value})
+	c.JSON(http.StatusFound, gin.H{"Value for que ": input.Key, "is": value})
 	return
 }
 
@@ -128,7 +131,7 @@ func (h Handler) BQPop(c *gin.Context) {
 		return
 	}
 	if input.Key == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error from input": errors.New("enter a valid key")})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "enter a valid key"})
 		return
 	}
 	value, err := h.usecase.BQPop(input.Key, input.Time)
@@ -136,6 +139,6 @@ func (h Handler) BQPop(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error from server": err.Error()})
 		return
 	}
-	c.JSON(http.StatusFound, gin.H{"Value for que :": input.Key, "is": value, "waited seconds : ": input.Time})
+	c.JSON(http.StatusFound, gin.H{"Value for que": input.Key, "is": value, "waited seconds": input.Time})
 	return
 }
