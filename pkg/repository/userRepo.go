@@ -79,21 +79,40 @@ func (r *Repository) QPop(key string) (string, error) {
 
 	return value, nil
 }
-
 func (r *Repository) BQPop(key string, timeout int) (string, error) {
-	select {
-	case <-time.After(time.Duration(timeout) * time.Second):
+	queue, ok := r.que.Data[key]
+	if !ok {
+		return "", errors.New("queue is empty")
+	}
+
+	if len(queue) == 0 {
+		select {
+		case <-time.After(time.Duration(timeout) * time.Second):
+			r.que.M.Lock()
+			defer r.que.M.Unlock()
+			if len(queue) == 0 {
+				return "", errors.New("TimeOut")
+			}
+		}
+	}
+
+	resultCh := make(chan string, 1)
+	go func() {
 		r.que.M.Lock()
 		defer r.que.M.Unlock()
-
-		queue, ok := r.que.Data[key]
-		if !ok || len(queue) == 0 {
-			return "", errors.New("queue is empty")
+		if len(queue) == 0 {
+			resultCh <- "null"
+		} else {
+			value := queue[len(queue)-1]
+			r.que.Data[key] = queue[:len(queue)-1]
+			resultCh <- value
 		}
+	}()
 
-		value := queue[len(queue)-1]
-		r.que.Data[key] = queue[:len(queue)-1]
-
+	select {
+	case value := <-resultCh:
 		return value, nil
+	case <-time.After(time.Duration(timeout) * time.Second):
+		return "null", errors.New("TimeOut")
 	}
 }
